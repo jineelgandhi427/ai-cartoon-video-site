@@ -3,13 +3,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { text, voice = "Rachel" } = req.body;
+  const { text, voice = "21m00Tcm4TlvDq8ikWAM" } = req.body;
 
   if (!text) {
     return res.status(400).json({ error: "No text provided" });
   }
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: "Missing ElevenLabs API key in environment variables" });
+  }
 
   try {
     const response = await fetch(
