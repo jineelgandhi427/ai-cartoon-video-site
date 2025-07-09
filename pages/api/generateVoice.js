@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).end(); // Method Not Allowed
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   const { text } = req.body;
@@ -9,10 +9,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No text provided' });
   }
 
-  // Simulate audio generation
-  const audioData = 'placeholder-audio-content';
-  const buffer = Buffer.from(audioData, 'utf-8');
+  // Simulate working response
+  const audioContent = 'Hello, this is a test audio.';
+  const buffer = Buffer.from(audioContent, 'utf-8');
 
   res.setHeader('Content-Type', 'audio/mpeg');
-  res.send(buffer);
+  res.status(200).send(buffer);
 }
