@@ -12,7 +12,7 @@ export default function Home() {
       const res = await fetch("/api/generateVoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: script, voiceId: "YOUR_VOICE_ID" }),
+        body: JSON.stringify({ text: script, voiceId: "ZT9u07TYPVl83ejeLakq" }),
       });
       if (!res.ok) throw await res.json();
       const blob = await res.blob();
