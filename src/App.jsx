@@ -3,68 +3,59 @@ import React, { useState } from "react";
 export default function App() {
   const [script, setScript] = useState("");
   const [status, setStatus] = useState("Idle");
-  const [audioURL, setAudioURL] = useState("");
-  const [videoURL, setVideoURL] = useState("");
+  const [cloudURL, setCloudURL] = useState("");
 
   const handleGenerateVoice = async () => {
     setStatus("Generating voice...");
 
     try {
-      const voiceResponse = await fetch("/api/generateVoice", {
+      // 1. Generate voice from ElevenLabs (your API route)
+      const response = await fetch("/api/generateVoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: script }),
+        body: JSON.stringify({ text: script, voice: "ZT9u07TYPVl83ejeLakq" }), // use your voice ID
       });
 
-      if (!voiceResponse.ok) {
-        const error = await voiceResponse.json();
-        console.error("Voice generation failed:", error);
+      if (!response.ok) {
+        const err = await response.json();
+        console.error("Voice error:", err);
         setStatus("Error generating voice");
         return;
       }
 
-      const audioBlob = await voiceResponse.blob();
-      const audioURL = URL.createObjectURL(audioBlob);
-      setAudioURL(audioURL);
-      setStatus("Voice ready! Uploading audio...");
+      const audioBlob = await response.blob();
+      const file = new File([audioBlob], "voice.mp3", { type: "audio/mpeg" });
 
-      // TODO: Upload audioBlob to a public file host
-      // For now, this next step won't work unless the audioURL is publicly accessible
-      const uploadURL = await uploadAudio(audioBlob); // <- implement this function to upload audio
+      // 2. Upload voice to Cloudinary
+      setStatus("Uploading to Cloudinary...");
 
-      if (!uploadURL) {
-        setStatus("Error uploading audio");
-        return;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "unsigned_preset"); // your preset
+      formData.append("resource_type", "auto"); // Let Cloudinary detect type
+
+      const uploadRes = await fetch(
+        "https://api.cloudinary.com/v1_1/dteqwe3nw/auto/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const uploadData = await uploadRes.json();
+
+      if (uploadData.secure_url) {
+        setCloudURL(uploadData.secure_url);
+        setStatus("Voice uploaded to Cloudinary!");
+      } else {
+        console.error("Cloudinary error:", uploadData);
+        setStatus("Error uploading to Cloudinary");
       }
-
-      setStatus("Creating video...");
-
-      const videoResponse = await fetch("/api/generateVideo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ audioUrl: uploadURL }),
-      });
-
-      const videoData = await videoResponse.json();
-      if (!videoResponse.ok) {
-        console.error("Video generation failed:", videoData);
-        setStatus("Error generating video");
-        return;
-      }
-
-      setVideoURL(videoData.result_url);
-      setStatus("Video ready!");
     } catch (err) {
-      console.error("Unexpected error:", err);
-      setStatus("Something went wrong");
+      console.error(err);
+      setStatus("Unexpected error");
     }
   };
-
-  // Dummy upload function (replace with real implementation)
-  async function uploadAudio(blob) {
-    // Example: upload to Cloudinary, Firebase, or your own server
-    return null; // this must return a valid public audio URL
-  }
 
   return (
     <div style={{ fontFamily: "Arial", padding: "2rem" }}>
@@ -77,20 +68,16 @@ export default function App() {
       />
       <br />
       <button onClick={handleGenerateVoice} style={{ marginTop: "1rem" }}>
-        Generate Video
+        Generate Voice
       </button>
       <p>Status: {status}</p>
-      {audioURL && (
-        <>
-          <p>Voice Preview:</p>
-          <audio controls src={audioURL} />
-        </>
-      )}
-      {videoURL && (
-        <>
-          <p>Video Preview:</p>
-          <video controls src={videoURL} style={{ width: "100%", marginTop: "1rem" }} />
-        </>
+
+      {cloudURL && (
+        <div>
+          <p>✅ Uploaded Audio:</p>
+          <audio controls src={cloudURL} />
+          <p>Cloudinary URL: <a href={cloudURL} target="_blank">{cloudURL}</a></p>
+        </div>
       )}
     </div>
   );
