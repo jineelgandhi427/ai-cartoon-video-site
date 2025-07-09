@@ -7,13 +7,31 @@ export default function App() {
   const [status, setStatus] = useState("Idle");
   const [videoURL, setVideoURL] = useState("");
 
-  const handleGenerateVideo = () => {
-    setStatus("Generating...");
-    setTimeout(() => {
-      setStatus("Complete!");
-      setVideoURL("https://example.com/generated-video.mp4");
-    }, 3000);
-  };
+  const handleGenerateVideo = async () => {
+  setStatus("Generating voice...");
+
+  try {
+    const response = await fetch('/api/generateVoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: script })
+    });
+
+    if (!response.ok) {
+      throw new Error('Voice generation failed');
+    }
+
+    const audioBlob = await response.blob();
+    const audioURL = URL.createObjectURL(audioBlob);
+
+    setVideoURL(audioURL); // Plays audio
+    setStatus("Voice ready!");
+  } catch (err) {
+    console.error(err);
+    setStatus("Error generating voice");
+  }
+};
+
 
   return (
     <div style={{ fontFamily: "Arial", padding: "2rem" }}>
