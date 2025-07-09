@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// Trigger redeploy test
+
 export default function App() {
   const [script, setScript] = useState("");
   const [voice, setVoice] = useState("female");
@@ -8,30 +8,26 @@ export default function App() {
   const [videoURL, setVideoURL] = useState("");
 
   const handleGenerateVideo = async () => {
-  setStatus("Generating voice...");
+    setStatus("Generating voice...");
 
-  try {
-    const response = await fetch('/api/generateVoice', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: script })
-    });
+    try {
+      const response = await fetch("/api/generateVoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: script }),
+      });
 
-    if (!response.ok) {
-      throw new Error('Voice generation failed');
+      if (!response.ok) throw new Error("Voice generation failed");
+
+      const audioBlob = await response.blob();
+      const audioURL = URL.createObjectURL(audioBlob);
+      setVideoURL(audioURL);
+      setStatus("Voice ready!");
+    } catch (err) {
+      console.error(err);
+      setStatus("Error generating voice");
     }
-
-    const audioBlob = await response.blob();
-    const audioURL = URL.createObjectURL(audioBlob);
-
-    setVideoURL(audioURL); // Plays audio
-    setStatus("Voice ready!");
-  } catch (err) {
-    console.error(err);
-    setStatus("Error generating voice");
-  }
-};
-
+  };
 
   return (
     <div style={{ fontFamily: "Arial", padding: "2rem" }}>
@@ -60,7 +56,7 @@ export default function App() {
         Generate Video
       </button>
       <p>Status: {status}</p>
-      {videoURL && <video src={videoURL} controls style={{ width: "100%" }} />}
+      {videoURL && <audio src={videoURL} controls />}
     </div>
   );
 }
