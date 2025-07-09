@@ -1,43 +1,33 @@
 import React, { useState } from "react";
 
-// Map voice name to ElevenLabs voice ID
-const voiceMap = {
-  female: "21m00Tcm4TlvDq8ikWAM", // Rachel
-  male: "TxGEqnHWrfWFTfGW9XjX",    // Joe
-};
-
 export default function App() {
   const [script, setScript] = useState("");
-  const [voice, setVoice] = useState("female");
-  const [character, setCharacter] = useState("default");
   const [status, setStatus] = useState("Idle");
   const [audioURL, setAudioURL] = useState("");
 
-  const handleGenerateVideo = async () => {
+  const handleGenerateVoice = async () => {
     setStatus("Generating voice...");
-    setAudioURL("");
 
     try {
       const response = await fetch("/api/generateVoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: script,
-          voice: voiceMap[voice], // use voice ID
-        }),
+        body: JSON.stringify({ text: script }),
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err?.error || "Voice generation failed");
+        const error = await response.json();
+        console.error("Voice error:", error);
+        setStatus("Error generating voice");
+        return;
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const audioBlob = await response.blob();
+      const url = URL.createObjectURL(audioBlob);
       setAudioURL(url);
-      setStatus("Voice generated!");
+      setStatus("Voice ready!");
     } catch (err) {
-      console.error("Voice error:", err);
+      console.error(err);
       setStatus("Error generating voice");
     }
   };
@@ -51,22 +41,9 @@ export default function App() {
         placeholder="Enter your script..."
         style={{ width: "100%", height: "100px" }}
       />
-      <div style={{ marginTop: "1rem" }}>
-        <label>Voice: </label>
-        <select value={voice} onChange={(e) => setVoice(e.target.value)}>
-          <option value="female">Female</option>
-          <option value="male">Male</option>
-        </select>
-      </div>
-      <div>
-        <label>Character: </label>
-        <select value={character} onChange={(e) => setCharacter(e.target.value)}>
-          <option value="default">Default</option>
-          <option value="ninja">Ninja</option>
-        </select>
-      </div>
-      <button onClick={handleGenerateVideo} style={{ marginTop: "1rem" }}>
-        Generate Video
+      <br />
+      <button onClick={handleGenerateVoice} style={{ marginTop: "1rem" }}>
+        Generate Voice
       </button>
       <p>Status: {status}</p>
       {audioURL && <audio controls src={audioURL} />}
